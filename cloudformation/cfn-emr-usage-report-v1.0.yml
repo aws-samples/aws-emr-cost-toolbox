@@ -1,0 +1,750 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation temaple to generate resources to build EMR Usage Report'
+Parameters:
+  YARNS3BucketName:
+    Type: String
+    AllowedPattern: '[a-z0-9-_.]+'
+    MinLength: 3
+    MaxLength: 63
+    Description: Name of S3 bucket where YARN metrics are stored.
+    ConstraintDescription: Please follow S3 bucket naming conventions. Eg. only lowercase letters, numbers, dot and hypen(-).
+  QSDefinitionsFile:
+    Type: String
+    AllowedPattern: '^s3://([^/]+)/(.*)'
+    Description: S3 URI of the definition JSON file for the EMR Usage Report.
+    ConstraintDescription: Must be a valid S3 URI (e.g., s3://bucket-name/key-name)
+  CURDatabaseName:
+    Type: String
+    AllowedPattern: '[a-z0-9-_]+'
+    Description: Name of Cost Usage Report database in Glue.
+    ConstraintDescription: Please use lowercase letters, numbers and hypen(-) only.
+  CURTableName:
+    Type: String
+    AllowedPattern: '[a-z0-9_]+'
+    Description: Name of Cost Usage Report table in Glue.
+    ConstraintDescription: Please use lowercase letters, numbers and hypen(-) only.
+  EMRUsageDBName:
+    Type: String
+    AllowedPattern: '[a-z0-9_]+'
+    Default: "cfn_emr_database"
+    Description: Name of Glue database to be created for EMR Usage Report.
+    ConstraintDescription: Please use lowercase letters, numbers and underscore(_) only.
+  EMRInfraTableName:
+    Type: String
+    AllowedPattern: '[a-z0-9_]+'
+    Default: cfn_emr_cluster
+    Description: Name of Glue table to be created for cluster usage metrics.
+    ConstraintDescription: Please use lowercase letters, numbers and underscore(_) only.
+  EMRAppTableName:
+    Type: String
+    AllowedPattern: '[a-z0-9_]+'
+    Default: cfn_emr_application
+    Description: Name of Glue table to be created for application usage metrics.
+    ConstraintDescription: Please use lowercase letters, numbers and underscore(_) only.
+  QSUserName:
+    Type: String
+    AllowedPattern: '.+'
+    Description: Name of QuickSight user in default namespace to manage the EMR Usage Report resources in QuickSight.
+
+Metadata:
+  AWS::CloudFormation::Interface: 
+    ParameterGroups:
+      - Label:
+          default: S3 Configuration
+        Parameters:
+          - YARNS3BucketName
+      - Label:
+          default: Cost Usage Report Configuration
+        Parameters:
+          - CURDatabaseName
+          - CURTableName
+      - Label:
+          default: Glue Database Configuration
+        Parameters:
+          - EMRUsageDBName
+          - EMRInfraTableName
+          - EMRAppTableName
+      - Label:
+          default: QuickSight Configuration
+        Parameters:
+          - QSUserName
+          - QSDefinitionsFile
+    ParameterLabels:
+      YARNS3BucketName:
+        default: YARNS3BucketName
+      CURDatabaseName:
+        default: CURDatabaseName
+      CURTableName:
+        default: CURTableName
+      EMRUsageDBName:
+        default: EMRUsageDBName
+      EMRInfraTableName:
+        default: EMRInfraTableName
+      EMRAppTableName:
+        default: EMRAppTableName
+      QSUserName:
+        default: QSUserName
+      QSDefinitionsFile:
+        default: QSDefinitionsFile
+
+Resources:
+  GlueEMRUsageReportDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: !Ref EMRUsageDBName
+        Description: AWS Glue database created by CloudFormation for EMR Usage Report.
+        LocationUri: !Sub s3://${YARNS3BucketName}
+
+  GlueEMRUsageReportClusterTable:
+    Type: AWS::Glue::Table
+    Properties:
+      DatabaseName: !Ref GlueEMRUsageReportDatabase
+      CatalogId: !Ref AWS::AccountId
+      TableInput:
+        Name: !Ref EMRInfraTableName
+        Description: AWS Glue table created by CloudFormation for EMR Usage Report.
+        TableType: EXTERNAL_TABLE
+        StorageDescriptor:
+          Columns:
+            - Name: appssubmitted
+              Type: int
+            - Name: appscompleted
+              Type: int
+            - Name: appspending
+              Type: int
+            - Name: appsrunning
+              Type: int
+            - Name: appsfailed
+              Type: int
+            - Name: appskilled
+              Type: int
+            - Name: reservedmb
+              Type: int
+            - Name: availablemb
+              Type: int
+            - Name: allocatedmb
+              Type: int
+            - Name: pendingmb
+              Type: int
+            - Name: reservedvirtualcores
+              Type: int
+            - Name: availablevirtualcores
+              Type: int
+            - Name: allocatedvirtualcores
+              Type: int
+            - Name: pendingvirtualcores
+              Type: int
+            - Name: containersallocated
+              Type: int
+            - Name: containersreserved
+              Type: int
+            - Name: containerspending
+              Type: int
+            - Name: totalmb
+              Type: int
+            - Name: totalvirtualcores
+              Type: int
+            - Name: utilizedmbpercent
+              Type: int
+            - Name: utilizedvirtualcorespercent
+              Type: int
+            - Name: rmschedulerbusypercent
+              Type: int
+            - Name: totalnodes
+              Type: int
+            - Name: lostnodes
+              Type: int
+            - Name: unhealthynodes
+              Type: int            
+            - Name: decommissioningnodes
+              Type: int
+            - Name: decommissionednodes
+              Type: int
+            - Name: rebootednodes
+              Type: int
+            - Name: activenodes
+              Type: int
+            - Name: shutdownnodes
+              Type: int
+            - Name: totalusedresourcesacrosspartition
+              Type: struct<memory:int,vcores:int,resourceinformations:struct<resourceinformation:array<struct<attributes:string,maximumallocation:int,minimumallocation:int,name:string,resourcetype:string,units:string,value:int>>>>
+            - Name: totalclusterresourcesacrosspartition
+              Type: struct<memory:int,vcores:int,resourceinformations:struct<resourceinformation:array<struct<attributes:string,maximumallocation:int,minimumallocation:int,name:string,resourcetype:string,units:string,value:int>>>>
+            - Name: totalreservedresourcesacrosspartition
+              Type: struct<memory:int,vcores:int,resourceinformations:struct<resourceinformation:array<struct<attributes:string,maximumallocation:int,minimumallocation:int,name:string,resourcetype:string,units:string,value:int>>>>
+            - Name: totalallocatedcontainersacrosspartition
+              Type: int
+            - Name: crosspartitionmetricsavailable
+              Type: boolean
+            - Name: timestamp
+              Type: bigint
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          Parameters:
+            classification: json
+            compressionType: none
+            typeOfData: file
+          SerdeInfo:
+            Parameters:
+              paths: activeNodes,allocatedMB,allocatedVirtualCores,appsCompleted,appsFailed,appsKilled,appsPending,appsRunning,appsSubmitted,availableMB,availableVirtualCores,containersAllocated,containersPending,containersReserved,crossPartitionMetricsAvailable,decommissionedNodes,decommissioningNodes,lostNodes,pendingMB,pendingVirtualCores,rebootedNodes,reservedMB,reservedVirtualCores,rmSchedulerBusyPercent,shutdownNodes,timestamp,totalAllocatedContainersAcrossPartition,totalClusterResourcesAcrossPartition,totalMB,totalNodes,totalReservedResourcesAcrossPartition,totalUsedResourcesAcrossPartition,totalVirtualCores,unhealthyNodes,utilizedMBPercent,utilizedVirtualCoresPercent
+            SerializationLibrary: org.openx.data.jsonserde.JsonSerDe
+          Location: !Sub s3://${YARNS3BucketName}/emr_usage_report/cluster_usage/
+        PartitionKeys:
+          - Name: cluster_id
+            Type: string
+          - Name: year
+            Type: string
+          - Name: month
+            Type: string          
+          - Name: day
+            Type: string
+    DependsOn: GlueEMRUsageReportDatabase
+  
+  GlueEMRUsageReportApplicationTable:
+    Type: AWS::Glue::Table
+    Properties:
+      DatabaseName: !Ref GlueEMRUsageReportDatabase
+      CatalogId: !Ref AWS::AccountId
+      TableInput:
+        Name: !Ref EMRAppTableName
+        Description: AWS Glue table created by CloudFormation for EMR Usage Report.
+        TableType: EXTERNAL_TABLE
+        StorageDescriptor:
+          Columns:
+            - Name: id
+              Type: string
+            - Name: user
+              Type: string
+            - Name: name
+              Type: string
+            - Name: queue
+              Type: string
+            - Name: state
+              Type: string
+            - Name: finalstatus
+              Type: string
+            - Name: progress
+              Type: double
+            - Name: trackingui
+              Type: string
+            - Name: trackingurl
+              Type: string
+            - Name: diagnostics
+              Type: string
+            - Name: clusterid
+              Type: bigint
+            - Name: applicationtype
+              Type: string
+            - Name: applicationtags
+              Type: string
+            - Name: priority
+              Type: int
+            - Name: startedtime
+              Type: bigint
+            - Name: launchtime
+              Type: bigint
+            - Name: finishedtime
+              Type: bigint
+            - Name: elapsedtime
+              Type: bigint
+            - Name: amcontainerlogs
+              Type: string
+            - Name: amhosthttpaddress
+              Type: string
+            - Name: masternodeid
+              Type: string
+            - Name: allocatedmb
+              Type: int
+            - Name: allocatedvcores
+              Type: int
+            - Name: reservedmb
+              Type: int
+            - Name: reservedvcores
+              Type: int            
+            - Name: runningcontainers
+              Type: int
+            - Name: memoryseconds
+              Type: int
+            - Name: vcoreseconds
+              Type: int
+            - Name: queueusagepercentage
+              Type: double
+            - Name: clusterusagepercentage
+              Type: double
+            - Name: resourcesecondsmap
+              Type: struct<entry:struct<key:string,value:string>>
+            - Name: preemptedresourcemb
+              Type: int
+            - Name: preemptedresourcevcores
+              Type: int
+            - Name: numnonamcontainerpreempted
+              Type: int
+            - Name: numamcontainerpreempted
+              Type: int
+            - Name: preemptedmemoryseconds
+              Type: int
+            - Name: preemptedvcoreseconds
+              Type: int
+            - Name: preemptedresourcesecondsmap
+              Type: string
+            - Name: logaggregationstatus
+              Type: string
+            - Name: unmanagedapplication
+              Type: boolean
+            - Name: amnodelabelexpression
+              Type: string
+            - Name: timeouts
+              Type: struct<timeout:array<struct<type:string,expirytime:string,remainingtimeinseconds:int>>>
+            - Name: amrpcaddress
+              Type: string
+            - Name: resourceinfo
+              Type: struct<resourceusagesbypartition:array<struct<partitionname:string,used:struct<memory:int,vcores:int,resourceinformations:struct<resourceinformation:array<struct<attributes:string,maximumallocation:int,minimumallocation:int,name:string,resourcetype:string,units:string,value:int>>>>,reserved:struct<memory:int,vcores:int,resourceinformations:struct<resourceinformation:array<struct<attributes:string,maximumallocation:int,minimumallocation:int,name:string,resourcetype:string,units:string,value:int>>>>,pending:struct<memory:int,vcores:int,resourceinformations:struct<resourceinformation:array<struct<attributes:string,maximumallocation:int,minimumallocation:int,name:string,resourcetype:string,units:string,value:int>>>>,amused:struct<memory:int,vcores:int,resourceinformations:struct<resourceinformation:array<struct<attributes:string,maximumallocation:int,minimumallocation:int,name:string,resourcetype:string,units:string,value:int>>>>,amlimit:struct<memory:int,vcores:int,resourceinformations:struct<resourceinformation:array<struct<attributes:string,maximumallocation:int,minimumallocation:int,name:string,resourcetype:string,units:string,value:int>>>>,useramlimit:struct<memory:int,vcores:int,resourceinformations:struct<resourceinformation:array<struct<attributes:string,maximumallocation:int,minimumallocation:int,name:string,resourcetype:string,units:string,value:int>>>>>>>
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          Parameters:
+            classification: json
+            compressionType: none
+            typeOfData: file
+          SerdeInfo:
+            Parameters:
+              paths: allocatedMB,allocatedVCores,amContainerLogs,amHostHttpAddress,amNodeLabelExpression,amRPCAddress,applicationTags,applicationType,clusterId,clusterUsagePercentage,diagnostics,elapsedTime,finalStatus,finishedTime,id,launchTime,logAggregationStatus,masterNodeId,memorySeconds,name,numAMContainerPreempted,numNonAMContainerPreempted,preemptedMemorySeconds,preemptedResourceMB,preemptedResourceSecondsMap,preemptedResourceVCores,preemptedVcoreSeconds,priority,progress,queue,queueUsagePercentage,reservedMB,reservedVCores,resourceInfo,resourceSecondsMap,runningContainers,startedTime,state,timeouts,trackingUI,trackingUrl,unmanagedApplication,user,vcoreSeconds
+            SerializationLibrary: org.openx.data.jsonserde.JsonSerDe
+          Location: !Sub s3://${YARNS3BucketName}/emr_usage_report/application_usage/
+        PartitionKeys:
+          - Name: cluster_id
+            Type: string
+    DependsOn: GlueEMRUsageReportDatabase
+
+  AthenaEMRUsageReportWorkGroup:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Name: EMRUsageWorkGroup
+      Description: Athena workgroup created by CloudFormation for EMR Usage Report
+      RecursiveDeleteOption: true
+      State: ENABLED
+      WorkGroupConfiguration:
+        EnforceWorkGroupConfiguration: true
+        PublishCloudWatchMetricsEnabled: true
+        RequesterPaysEnabled: false
+        ResultConfiguration:
+          OutputLocation: !Sub s3://${YARNS3BucketName}/emr_usage_report/athena_query_output/
+  
+  EMRUsageReportQueryFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          import logging
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          athena = boto3.client('athena')
+
+          def lambda_handler(event, context):  
+              
+              logger.info(f"EVENT RECEIVED: {event}");
+              logger.info(f"CONTEXT RECEIVED: {context}");
+
+              try:
+                if event['RequestType'] == 'Create':
+                    workgroup = event['ResourceProperties']['WorkGroup']
+                    query_string = event['ResourceProperties']['QueryString']
+
+                    response = athena.start_query_execution(
+                        WorkGroup=workgroup,
+                        QueryString=query_string,
+                        ResultConfiguration = {'OutputLocation' : event['ResourceProperties']['OutputLocation']}
+                    )
+                    logger.info(f"RESPONSE RECEIVED: {response}");
+                    cfnresponse.send(event, context, cfnresponse.SUCCESS, response, "Query Execution Completed Successfully")
+                else:
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "No action required")
+              
+              except Exception as e:
+                  logger.error(f"Exception: {e}")
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {}, str(e))
+
+      Handler: index.lambda_handler
+      Runtime: python3.11
+      Role: !GetAtt EMRUsageReportLambdaRole.Arn
+      Timeout: 120
+    DependsOn: EMRUsageReportLambdaRole
+  
+  EMRUsageReportLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonAthenaFullAccess
+
+  AthenaQueryRunnerMSCKRepairGlueEMRUsageReportCusterTable:
+    Type: Custom::MSCKRepairGlueEMRUsageReportCusterTable
+    Properties:
+      ServiceToken: !GetAtt EMRUsageReportQueryFunction.Arn
+      WorkGroup: !Ref AthenaEMRUsageReportWorkGroup
+      OutputLocation: !Sub s3://${YARNS3BucketName}/emr_usage_report/lambda_query_output/
+      QueryString: !Sub 
+        - |
+          MSCK REPAIR TABLE ${DBName}.${TableName}
+        - { DBName: !Ref EMRUsageDBName, TableName: !Ref EMRInfraTableName }
+    DependsOn: GlueEMRUsageReportClusterTable
+
+  AthenaQueryRunnerMSCKRepairGlueEMRUsageReportApplicationTable:
+    Type: Custom::MSCKRepairGlueEMRUsageReportApplicationTable
+    Properties:
+      ServiceToken: !GetAtt EMRUsageReportQueryFunction.Arn
+      WorkGroup: !Ref AthenaEMRUsageReportWorkGroup
+      OutputLocation: !Sub s3://${YARNS3BucketName}/emr_usage_report/lambda_query_output/
+      QueryString: !Sub 
+        - |
+          MSCK REPAIR TABLE ${DBName}.${TableName}
+        - { DBName: !Ref EMRUsageDBName, TableName: !Ref EMRAppTableName }
+    DependsOn: GlueEMRUsageReportApplicationTable
+
+  AthenaQueryRunnerEMRUsageReportCusterView:
+    Type: Custom::AthenaEMRUsageReportCusterViewv
+    Properties:
+      ServiceToken: !GetAtt EMRUsageReportQueryFunction.Arn
+      WorkGroup: !Ref AthenaEMRUsageReportWorkGroup
+      OutputLocation: !Sub s3://${YARNS3BucketName}/emr_usage_report/lambda_query_output/
+      QueryString: !Sub 
+        - |
+          CREATE OR REPLACE VIEW ${DBName}.${TableName}_view AS
+          SELECT
+            split_part(line_item_resource_id, '/', 2) AS cluster_id, product_product_family AS family,
+            line_item_usage_start_date AS billing_start, line_item_usage_type AS usage_type,
+            sum(line_item_unblended_cost) as cost
+          FROM
+            ${CURDBName}.${CURTableName}
+          WHERE
+            product_product_name = 'Amazon Elastic MapReduce' 
+            AND split_part(line_item_resource_id, '/', 2) != 'applications' 
+            AND line_item_usage_start_date >= now() - interval '6' month
+          GROUP BY 1,2,3,4
+          UNION
+          SELECT
+            resource_tags_aws_elasticmapreduce_job_flow_id AS cluster_id, product_product_family AS family,
+            line_item_usage_start_date AS billing_start, line_item_usage_type AS usage_type,
+            sum(line_item_unblended_cost) as cost
+          FROM
+            ${CURDBName}.${CURTableName}
+          WHERE
+            product_product_name = 'Amazon Elastic Compute Cloud'
+            AND resource_tags_aws_elasticmapreduce_job_flow_id NOT IN ('null', 'applications')
+            AND resource_tags_aws_elasticmapreduce_job_flow_id <> ''
+            AND line_item_usage_start_date >= now() - interval '6' month
+          GROUP BY 1,2,3,4
+        - { DBName: !Ref EMRUsageDBName, TableName: !Ref EMRInfraTableName, CURDBName: !Ref CURDatabaseName, CURTableName: !Ref CURTableName }
+    DependsOn: AthenaQueryRunnerMSCKRepairGlueEMRUsageReportCusterTable
+
+  AthenaQueryRunnerEMRUsageReportApplicationView:
+    Type: Custom::AthenaEMRUsageReportApplicationView
+    Properties:
+      ServiceToken: !GetAtt EMRUsageReportQueryFunction.Arn
+      WorkGroup: !Ref AthenaEMRUsageReportWorkGroup
+      OutputLocation: !Sub s3://${YARNS3BucketName}/emr_usage_report/lambda_query_output/
+      QueryString: !Sub 
+        - |
+          CREATE OR REPLACE VIEW ${DBName}.${AppTableName}_view AS
+          SELECT
+              cluster_id, id, user, name, queue, finalstatus, applicationtype, 
+              date_trunc('second', cast(date_format(from_unixtime(startedtime/1000), '%Y-%m-%d %H:%i:%s') as timestamp)) AS startedtime,
+              date_trunc('second', cast(date_format(from_unixtime(finishedtime/1000), '%Y-%m-%d %H:%i:%s') as timestamp)) AS finishedtime,
+              cast(elapsedtime as double) / 1000 AS elapsed_sec, memoryseconds, vcoreseconds, total_memory_mb_avg, memory_sec_cost,
+              memoryseconds * memory_sec_cost AS application_cost, total_cost  
+          FROM
+              emr_usage_report.application_usage
+              JOIN (
+                  SELECT 
+                      emr_cluster, billing_start, total_memory_mb_avg, sum(cost) as total_cost, sum(cost) / (total_memory_mb_avg * minutes_collected * 60) AS memory_sec_cost
+                  FROM
+                  (
+                      SELECT 
+                          split_part(line_item_resource_id, '/', 2) AS emr_cluster, line_item_usage_start_date AS billing_start, 
+                          sum(line_item_unblended_cost) AS cost 
+                      FROM 
+                          ${CURDBName}.${CURTableName}
+                      WHERE 
+                          product_product_name = 'Amazon Elastic MapReduce' 
+                          AND line_item_usage_start_date >= now() - interval '6' month
+                      GROUP BY 1,2
+                      UNION  
+                      SELECT 
+                          resource_tags_aws_elasticmapreduce_job_flow_id AS emr_cluster, line_item_usage_start_date AS billing_start,
+                          sum(line_item_unblended_cost) AS cost 
+                      FROM 
+                          ${CURDBName}.${CURTableName}
+                      WHERE 
+                          product_product_name = 'Amazon Elastic Compute Cloud' 
+                          AND resource_tags_aws_elasticmapreduce_job_flow_id NOT IN ('null', 'applications') 
+                          AND resource_tags_aws_elasticmapreduce_job_flow_id <> '' 
+                          AND line_item_usage_start_date >= now() - interval '6' month
+                      GROUP BY 1,2
+                  ) as a
+                  JOIN 
+                  (
+                      SELECT 
+                          cluster_id,
+                          date_trunc('hour', cast(date_format(from_unixtime(timestamp/1000), '%Y-%m-%d %H:%i:%s') as timestamp)) as DATE_HOUR,
+                          avg(totalmb) AS total_memory_mb_avg,
+                          count(*) AS minutes_collected 
+                      FROM 
+                          ${DBName}.${InfraTableName} 
+                      WHERE
+                        cast(date_format(from_unixtime(timestamp/1000), '%Y-%m-%d %H:%i:%s') as timestamp) >= now() - interval '6' month
+                      GROUP BY 1,2
+                  ) as b
+                  ON
+                  a.emr_cluster = b.cluster_id
+                  AND date_trunc('hour',a.billing_start) = date_trunc('hour', b.DATE_HOUR)
+                  GROUP BY 1,2,3,minutes_collected
+              )    
+              ON
+              cluster_id = emr_cluster
+              AND date_trunc('hour', cast(date_format(from_unixtime(startedtime/1000), '%Y-%m-%d %H:%i:%s') as timestamp)) = billing_start
+              ORDER BY
+                  billing_start desc
+        - { DBName: !Ref EMRUsageDBName, AppTableName: !Ref EMRAppTableName, InfraTableName: !Ref EMRInfraTableName, CURDBName: !Ref CURDatabaseName, CURTableName: !Ref CURTableName }
+    DependsOn: AthenaQueryRunnerMSCKRepairGlueEMRUsageReportApplicationTable
+
+  QuickSightDataSourceAthenaEMRUsageReportWorkGroup:
+    Type: AWS::QuickSight::DataSource
+    Properties:
+      AwsAccountId: !Ref AWS::AccountId
+      DataSourceId: QuickSightDataSourceAthenaEMRUsageReportWorkGroup
+      Name: QuickSightDataSourceAthenaEMRUsageReportWorkGroup
+      Type: ATHENA
+      DataSourceParameters:
+        AthenaParameters:
+          WorkGroup: EMRUsageWorkGroup
+    DependsOn: AthenaEMRUsageReportWorkGroup
+
+  QuickSightDataSetEMRUsageReportInfraSpendView:
+    Type: AWS::QuickSight::DataSet
+    Properties:
+      AwsAccountId: !Ref AWS::AccountId
+      DataSetId: !Sub '${EMRInfraTableName}_view'
+      Name: !Sub '${EMRInfraTableName}_view'
+      ImportMode: SPICE
+      PhysicalTableMap:
+        EMRInfraSpendView:
+          RelationalTable: 
+            DataSourceArn: !GetAtt QuickSightDataSourceAthenaEMRUsageReportWorkGroup.Arn
+            Schema: !Ref GlueEMRUsageReportDatabase
+            Name: !Sub '${EMRInfraTableName}_view'
+            InputColumns:
+              - Name: cluster_id
+                Type: STRING
+              - Name: family
+                Type: STRING
+              - Name: billing_start
+                Type: DATETIME
+              - Name: usage_type
+                Type: STRING
+              - Name: cost
+                Type: DECIMAL
+      Permissions:
+        - Principal: !Sub arn:aws:quicksight:${AWS::Region}:${AWS::AccountId}:user/default/${QSUserName}
+          Actions:
+            - quicksight:DeleteDataSet
+            - quicksight:UpdateDataSetPermissions
+            - quicksight:PutDataSetRefreshProperties
+            - quicksight:CreateRefreshSchedule
+            - quicksight:CancelIngestion
+            - quicksight:ListRefreshSchedules
+            - quicksight:UpdateRefreshSchedule
+            - quicksight:DeleteRefreshSchedule
+            - quicksight:PassDataSet
+            - quicksight:DescribeDataSetRefreshProperties
+            - quicksight:DescribeDataSet
+            - quicksight:CreateIngestion
+            - quicksight:DescribeRefreshSchedule
+            - quicksight:ListIngestions
+            - quicksight:DescribeDataSetPermissions
+            - quicksight:UpdateDataSet
+            - quicksight:DeleteDataSetRefreshProperties
+            - quicksight:DescribeIngestion
+    DependsOn: AthenaQueryRunnerEMRUsageReportCusterView
+
+  QuickSightRefreshScheduleEMRUsageReportInfraSpendView:
+    Type: AWS::QuickSight::RefreshSchedule
+    Properties:
+      AwsAccountId: !Ref AWS::AccountId
+      DataSetId: !Sub '${EMRInfraTableName}_view'
+      Schedule:
+        RefreshType: FULL_REFRESH
+        ScheduleId: QuickSightRefreshScheduleEMRUsageReportInfraSpendView
+        ScheduleFrequency: 
+          Interval: DAILY
+          TimeOfTheDay: "08:00"
+    DependsOn: QuickSightDataSetEMRUsageReportInfraSpendView
+
+  QuickSightDataSetEMRUsageReportAppSpendView:
+    Type: AWS::QuickSight::DataSet
+    Properties:
+      AwsAccountId: !Ref AWS::AccountId
+      DataSetId: !Sub '${EMRAppTableName}_view'
+      Name: !Sub '${EMRAppTableName}_view'
+      ImportMode: SPICE
+      PhysicalTableMap:
+        EMRAppSpendView:
+          RelationalTable: 
+            DataSourceArn: !GetAtt QuickSightDataSourceAthenaEMRUsageReportWorkGroup.Arn
+            Schema: !Ref GlueEMRUsageReportDatabase
+            Name: !Sub '${EMRAppTableName}_view'
+            InputColumns:
+              - Name: cluster_id
+                Type: STRING
+              - Name: id
+                Type: STRING
+              - Name: user
+                Type: STRING
+              - Name: name
+                Type: STRING
+              - Name: queue
+                Type: STRING
+              - Name: finalstatus
+                Type: STRING
+              - Name: applicationtype
+                Type: STRING
+              - Name: startedtime
+                Type: DATETIME
+              - Name: finishedtime
+                Type: DATETIME
+              - Name: elapsed_sec
+                Type: DECIMAL
+              - Name: memoryseconds
+                Type: INTEGER
+              - Name: vcoreseconds
+                Type: INTEGER
+              - Name: total_memory_mb_avg
+                Type: DECIMAL
+              - Name: memory_sec_cost
+                Type: DECIMAL
+              - Name: application_cost
+                Type: DECIMAL
+              - Name: total_cost
+                Type: DECIMAL
+      Permissions:
+        - Principal: !Sub arn:aws:quicksight:${AWS::Region}:${AWS::AccountId}:user/default/${QSUserName}
+          Actions:
+            - quicksight:DeleteDataSet
+            - quicksight:UpdateDataSetPermissions
+            - quicksight:PutDataSetRefreshProperties
+            - quicksight:CreateRefreshSchedule
+            - quicksight:CancelIngestion
+            - quicksight:ListRefreshSchedules
+            - quicksight:UpdateRefreshSchedule
+            - quicksight:DeleteRefreshSchedule
+            - quicksight:PassDataSet
+            - quicksight:DescribeDataSetRefreshProperties
+            - quicksight:DescribeDataSet
+            - quicksight:CreateIngestion
+            - quicksight:DescribeRefreshSchedule
+            - quicksight:ListIngestions
+            - quicksight:DescribeDataSetPermissions
+            - quicksight:UpdateDataSet
+            - quicksight:DeleteDataSetRefreshProperties
+            - quicksight:DescribeIngestion
+    DependsOn: AthenaQueryRunnerEMRUsageReportApplicationView
+
+  QuickSightRefreshScheduleEMRUsageReportAppSpendView:
+    Type: AWS::QuickSight::RefreshSchedule
+    Properties:
+      AwsAccountId: !Ref AWS::AccountId
+      DataSetId: !Sub '${EMRAppTableName}_view'
+      Schedule:
+        RefreshType: FULL_REFRESH
+        ScheduleId: QuickSightRefreshScheduleEMRAppSpendView
+        ScheduleFrequency: 
+          Interval: DAILY
+          TimeOfTheDay: "08:00"
+    DependsOn: QuickSightDataSetEMRUsageReportAppSpendView
+
+  QuickSightAnalysisEMRUsageReport:
+    Type: AWS::QuickSight::Analysis
+    Properties:
+      AnalysisId: CFN_EMRUsageReport
+      AwsAccountId: !Ref AWS::AccountId
+      Name: CFN_EMRUsageReport
+      Definition: 
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: !Ref QSDefinitionsFile
+      Permissions:
+        - Principal: !Sub arn:aws:quicksight:${AWS::Region}:${AWS::AccountId}:user/default/${QSUserName}
+          Actions:
+            - "quicksight:UpdateAnalysisPermissions"
+            - "quicksight:DescribeAnalysis"
+            - "quicksight:DescribeAnalysisPermissions"
+            - "quicksight:DeleteAnalysis"
+            - "quicksight:UpdateAnalysis"
+            - "quicksight:QueryAnalysis"
+            - "quicksight:RestoreAnalysis"
+    DependsOn:
+      - QuickSightDataSetEMRUsageReportInfraSpendView
+      - QuickSightDataSetEMRUsageReportAppSpendView
+
+Outputs:
+  GlueEMRUsageReportDatabase:
+    Description: Name of the EMR Usage Report database in Glue.
+    Value: !Ref GlueEMRUsageReportDatabase
+  GlueEMRUsageReportClusterTable:
+    Description: Name of the EMR Usage Report cluster table in Glue.
+    Value: !Ref GlueEMRUsageReportClusterTable
+  GlueEMRUsageReportApplicationTable:
+    Description: Name of the EMR Usage Report application table in  Glue.
+    Value: !Ref GlueEMRUsageReportApplicationTable  
+  AthenaEMRUsageReportWorkGroup:
+    Description: Name of the Athena Workgroup created for EMR Usage Report.
+    Value: !Ref AthenaEMRUsageReportWorkGroup
+  EMRUsageReportLambdaRole:
+    Description: Role created for Lamdba Function.
+    Value: !GetAtt EMRUsageReportLambdaRole.Arn
+  EMRUsageReportQueryFunction:
+    Description: Lambda function to start Athena queries.
+    Value: !GetAtt EMRUsageReportQueryFunction.Arn
+  AthenaQueryRunnerMSCKRepairGlueEMRUsageReportCusterTable:
+    Description: Custom resource to MSCK Repair EMR Usage Report cluster table in Glue.
+    Value: !Ref AthenaQueryRunnerMSCKRepairGlueEMRUsageReportCusterTable
+  AthenaQueryRunnerMSCKRepairGlueEMRUsageReportApplicationTable:
+    Description: Custom resource to MSCK Repair EMR Usage Report application table in Glue.
+    Value: !Ref AthenaQueryRunnerMSCKRepairGlueEMRUsageReportApplicationTable
+  AthenaQueryRunnerEMRUsageReportCusterView:
+    Description: Custom resource to create EMR Usage Report cluster view in Athena.
+    Value: !Ref AthenaQueryRunnerEMRUsageReportCusterView
+  AthenaQueryRunnerEMRUsageReportApplicationView:
+    Description: Custom resource to create EMR Usage Report application view in Athena.
+    Value: !Ref AthenaQueryRunnerEMRUsageReportApplicationView
+  QuickSightDataSourceAthenaEMRUsageReportWorkGroup:
+    Description: QuickSight datasource for EMR Usage Report.
+    Value: !GetAtt QuickSightDataSourceAthenaEMRUsageReportWorkGroup.Arn
+  QuickSightDataSetEMRUsageReportInfraSpendView:
+    Description: QuickSight dataset for EMR cluster spend view.
+    Value: !GetAtt QuickSightDataSetEMRUsageReportInfraSpendView.Arn
+  QuickSightRefreshScheduleEMRUsageReportInfraSpendView:
+    Description: QuickSight daily refresh schedule for the dataset.
+    Value: !GetAtt QuickSightRefreshScheduleEMRUsageReportInfraSpendView.Arn
+  QuickSightDataSetEMRUsageReportAppSpendView:
+    Description: QuickSight dataset for EMR application spend view.
+    Value: !GetAtt QuickSightDataSetEMRUsageReportAppSpendView.Arn
+  QuickSightRefreshScheduleEMRUsageReportAppSpendView:
+    Description: QuickSight daily refresh schedule for the dataset.
+    Value: !GetAtt QuickSightRefreshScheduleEMRUsageReportAppSpendView.Arn
+  QuickSightAnalysisEMRUsageReport:
+    Description: QuickSight Analysis for EMR Usage Report.
+    Value: !GetAtt QuickSightAnalysisEMRUsageReport.Arn
