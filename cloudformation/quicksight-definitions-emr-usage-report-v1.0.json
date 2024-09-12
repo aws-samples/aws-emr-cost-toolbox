@@ -1,0 +1,790 @@
+{
+    "DataSetIdentifierDeclarations": [
+          {
+                "DataSetArn": {"Fn::Sub": "arn:aws:quicksight:${AWS::Region}:${AWS::AccountId}:dataset/${EMRInfraTableName}_view"},
+                "Identifier": {"Fn::Sub": "${EMRInfraTableName}_view"}
+          },
+          {
+                "DataSetArn": {"Fn::Sub": "arn:aws:quicksight:${AWS::Region}:${AWS::AccountId}:dataset/${EMRAppTableName}_view"},
+                "Identifier": {"Fn::Sub": "${EMRAppTableName}_view"}
+          }
+    ],
+    "AnalysisDefaults": {
+          "DefaultNewSheetConfiguration": {
+                "InteractiveLayoutConfiguration": {
+                      "FreeForm": {
+                            "CanvasSizeOptions": {
+                                  "ScreenCanvasSizeOptions": {
+                                        "OptimizedViewPortWidth": "1600px"
+                                  }
+                            }
+                      }
+                },
+                "SheetContentType": "INTERACTIVE"
+          }
+    },
+    "FilterGroups": [
+        {
+            "FilterGroupId": "filtergroup1",
+            "Filters": [
+                {
+                    "TimeRangeFilter": {
+                    "FilterId": "timerangefilter1",
+                    "Column": {
+                        "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                        "ColumnName": "billing_start"
+                    },
+                    "IncludeMinimum": true,
+                    "IncludeMaximum": false,
+                    "RangeMinimumValue": {
+                        "StaticValue": "2024-01-01T08:00:00+08:00"
+                    },
+                    "RangeMaximumValue": {
+                        "StaticValue": "2024-05-01T08:00:00+08:00"
+                    },
+                    "NullOption": "ALL_VALUES",
+                    "TimeGranularity": "DAY"
+                    }                        
+                }
+            ],
+            "ScopeConfiguration": {
+                "SelectedSheets": {
+                    "SheetVisualScopingConfigurations": [
+                        {
+                            "SheetId": "sheet1",
+                            "Scope": "ALL_VISUALS"
+                        }
+                    ]
+                }
+            },
+            "Status": "ENABLED",
+            "CrossDataset": "SINGLE_DATASET"
+        },
+        {
+            "FilterGroupId": "filtergroup2",
+            "Filters": [
+                {
+                    "CategoryFilter": {
+                    "FilterId": "clusterfilter",
+                    "Column": {
+                        "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                        "ColumnName": "cluster_id"
+                },
+                    "Configuration": {
+                        "FilterListConfiguration": {
+                            "MatchOperator": "CONTAINS",
+                            "SelectAllOptions": "FILTER_ALL_VALUES",
+                            "NullOption": "NON_NULLS_ONLY"
+                            }  
+                        }
+                    }
+                }
+            ],
+            "ScopeConfiguration": {
+                "SelectedSheets": {
+                    "SheetVisualScopingConfigurations": [
+                        {
+                            "SheetId": "sheet1",
+                            "Scope": "ALL_VISUALS"
+                        }
+                    ]
+                }
+            },
+            "Status": "ENABLED",
+            "CrossDataset": "SINGLE_DATASET"
+        },
+        {
+            "FilterGroupId": "filtergroup3",
+            "Filters": [
+                {
+                    "TimeRangeFilter": {
+                    "FilterId": "timerangefilter2",
+                    "Column": {
+                        "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                        "ColumnName": "startedtime"
+                    },
+                    "IncludeMinimum": true,
+                    "IncludeMaximum": false,
+                    "RangeMinimumValue": {
+                        "StaticValue": "2024-01-01T08:00:00+08:00"
+                    },
+                    "RangeMaximumValue": {
+                        "StaticValue": "2024-05-01T08:00:00+08:00"
+                    },
+                    "NullOption": "ALL_VALUES",
+                    "TimeGranularity": "DAY"
+                    }                        
+                }
+            ],
+            "ScopeConfiguration": {
+                "SelectedSheets": {
+                    "SheetVisualScopingConfigurations": [
+                        {
+                            "SheetId": "sheet2",
+                            "Scope": "ALL_VISUALS"
+                        }
+                    ]
+                }
+            },
+            "Status": "ENABLED",
+            "CrossDataset": "SINGLE_DATASET"
+        },
+        {
+            "FilterGroupId": "filtergroup4",
+            "Filters": [
+                {
+                    "CategoryFilter": {
+                    "FilterId": "clusterfilter2",
+                    "Column": {
+                        "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                        "ColumnName": "cluster_id"
+                },
+                    "Configuration": {
+                        "FilterListConfiguration": {
+                            "MatchOperator": "CONTAINS",
+                            "SelectAllOptions": "FILTER_ALL_VALUES",
+                            "NullOption": "NON_NULLS_ONLY"
+                            }  
+                        }
+                    }
+                }
+            ],
+            "ScopeConfiguration": {
+                "SelectedSheets": {
+                    "SheetVisualScopingConfigurations": [
+                        {
+                            "SheetId": "sheet2",
+                            "Scope": "ALL_VISUALS"
+                        }
+                    ]
+                }
+            },
+            "Status": "ENABLED",
+            "CrossDataset": "SINGLE_DATASET"
+        }                         
+    ],
+    "Sheets": [
+        {
+            "SheetId": "sheet1",
+            "Title": "EMR Infra Spend (EMR+Compute)",
+            "Description": "This dashboard shows the EMR spend breakdown by infrastructure and EMR charges",
+            "Name": "EMR Infra Spend",
+            "FilterControls": [
+                {
+                    "DateTimePicker": {
+                        "FilterControlId": "daterangefilter",
+                        "Title": "Date",
+                        "SourceFilterId": "timerangefilter1",
+                        "Type": "DATE_RANGE"
+                        }                      
+                },
+                {
+                    "Dropdown": {
+                        "FilterControlId": "clusterdropdownfilter",
+                        "Title": "Cluster ID",
+                        "SourceFilterId": "clusterfilter",
+                        "Type": "MULTI_SELECT"
+                        } 
+                }
+            ],
+            "Visuals": [
+                {
+                    "BarChartVisual": {
+                        "VisualId": "barchart1",
+                        "Title": {
+                            "Visibility": "VISIBLE",
+                            "FormatText": {
+                                "PlainText": "EMR Infra Spend by Cluster"
+                            }
+                        },
+                        "ChartConfiguration": {
+                            "FieldWells": {
+                                "BarChartAggregatedFieldWells": {
+                                    "Category": [
+                                        {
+                                            "CategoricalDimensionField": {
+                                                "FieldId": "cluster_id",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                                    "ColumnName": "cluster_id"
+                                                }
+                                            }                    
+                                        }
+                                    ],
+                                    "Values": [
+                                        {
+                                            "NumericalMeasureField": {
+                                                "FieldId": "cost",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                                    "ColumnName": "cost"
+                                                },
+                                                "AggregationFunction": {
+                                                    "SimpleNumericalAggregation": "SUM",
+                                                    "PercentileAggregation": {
+                                                        "PercentileValue": 0.0
+                                                    }
+                                                },
+                                                "FormatConfiguration": {
+                                                    "FormatConfiguration": {
+                                                        "CurrencyDisplayFormatConfiguration": {
+                                                            "SeparatorConfiguration": {
+                                                                "DecimalSeparator": "DOT",
+                                                                "ThousandsSeparator": {
+                                                                    "Symbol": "COMMA",
+                                                                    "Visibility": "VISIBLE"
+                                                                }
+                                                            },
+                                                            "Symbol": "USD",
+                                                            "DecimalPlacesConfiguration": {
+                                                                "DecimalPlaces": 2
+                                                            },
+                                                            "NumberScale": "NONE",
+                                                            "NegativeValueConfiguration": {
+                                                                "DisplayMode": "POSITIVE"
+                                                            }
+                                                        }
+                                                    }
+                                                }                                                    
+                                            }
+                                        }
+                                    ],
+                                    "Colors": [
+                                        {
+                                            "CategoricalDimensionField": {
+                                                "FieldId": "family",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                                    "ColumnName": "family"
+                                                },
+                                                "HierarchyId": "family-to-tousage_type"
+                                            }
+                                        }
+                                    ]                                        
+                                }
+                            },
+                            "CategoryLabelOptions": {
+                                "Visibility": "VISIBLE",
+                                "SortIconVisibility": "HIDDEN",
+                                "AxisLabelOptions": [
+                                    {
+                                        "CustomLabel": "Cluster ID",
+                                        "ApplyTo": {
+                                            "FieldId": "cluster_id",
+                                            "Column": {
+                                                "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                                "ColumnName": "cluster_id"
+                                            }
+                                        }
+                                    }
+                                ]
+                            },  
+                            "ValueLabelOptions": {
+                                "Visibility": "VISIBLE",
+                                "SortIconVisibility": "HIDDEN",
+                                "AxisLabelOptions": [
+                                    {
+                                        "CustomLabel": "Cost (USD)",
+                                        "ApplyTo": {
+                                            "FieldId": "cost",
+                                            "Column": {
+                                                "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                                "ColumnName": "cost"
+                                            }
+                                        }
+                                    }
+                                ]
+                            },                                                              
+                            "BarsArrangement": "STACKED",
+                            "Orientation": "VERTICAL"                 
+                        },
+                        "ColumnHierarchies": [
+                            {
+                                "ExplicitHierarchy": {
+                                    "HierarchyId": "family-to-tousage_type",
+                                    "Columns": [
+                                        {
+                                            "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                            "ColumnName": "family"
+                                        },
+                                        {
+                                            "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                            "ColumnName": "usage_type"
+                                        }
+                                    ]
+                                }
+                            }
+                        ]                            
+                    }                        
+                },
+                {
+                    "PivotTableVisual": {
+                        "VisualId": "pivottable1",
+                        "Title": {
+                            "Visibility": "VISIBLE",
+                            "FormatText": {
+                                "PlainText": "EMR Infra Spend by Cluster & Usage Type"
+                            }
+                        },
+                        "ChartConfiguration": {
+                            "FieldWells": {
+                                "PivotTableAggregatedFieldWells": {
+                                    "Rows": [
+                                        {
+                                            "CategoricalDimensionField": {
+                                                "FieldId": "cluster_id",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                                    "ColumnName": "cluster_id"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "CategoricalDimensionField": {
+                                                "FieldId": "family",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                                    "ColumnName": "family"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "Columns": [
+                                        {
+                                            "DateDimensionField": {
+                                                "FieldId": "billing_start",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                                    "ColumnName": "billing_start"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "Values": [
+                                        {
+                                            "NumericalMeasureField": {
+                                                "FieldId": "cost",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRInfraTableName}_view"},
+                                                    "ColumnName": "cost"
+                                                },
+                                                "AggregationFunction": {
+                                                    "SimpleNumericalAggregation": "SUM",
+                                                    "PercentileAggregation": {
+                                                        "PercentileValue": 0.0
+                                                    }
+                                                },
+                                                "FormatConfiguration": {
+                                                    "FormatConfiguration": {
+                                                        "CurrencyDisplayFormatConfiguration": {
+                                                            "SeparatorConfiguration": {
+                                                                "DecimalSeparator": "DOT",
+                                                                "ThousandsSeparator": {
+                                                                    "Symbol": "COMMA",
+                                                                    "Visibility": "VISIBLE"
+                                                                }
+                                                            },
+                                                            "Symbol": "USD",
+                                                            "DecimalPlacesConfiguration": {
+                                                                "DecimalPlaces": 2
+                                                            },
+                                                            "NumberScale": "NONE",
+                                                            "NegativeValueConfiguration": {
+                                                                "DisplayMode": "POSITIVE"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "TableOptions" : {
+                                "RowsLayout": "HIERARCHY"
+                            },                                    
+                            "TotalOptions": {
+                                "RowSubtotalOptions": {
+                                    "TotalsVisibility": "VISIBLE",
+                                    "CustomLabel": "Subtotal",
+                                    "FieldLevel": "ALL"
+                                },                                    
+                                "RowTotalOptions": {
+                                    "TotalsVisibility": "HIDDEN",
+                                    "Placement": "AUTO"
+                                },
+                                "ColumnTotalOptions": {
+                                    "TotalsVisibility": "VISIBLE",
+                                    "Placement": "END"
+                                }
+                            },                                
+                            "FieldOptions": {
+                                "SelectedFieldOptions": [
+                                    {
+                                        "FieldId": "cluster_id",
+                                        "CustomLabel": "Cluster ID",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "family",
+                                        "CustomLabel": "Type",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "billing_start",
+                                        "CustomLabel": "DateTime",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "cost",
+                                        "CustomLabel": "Cost",
+                                        "Visibility": "VISIBLE"
+                                    }
+                                ],
+                                "CollapseStateOptions": [
+                                    {
+                                        "Target": {
+                                            "FieldId": "cluster_id"
+                                        },
+                                        "State": "COLLAPSED"
+                                    },
+                                    {
+                                        "Target": {
+                                            "FieldId": "family"
+                                        },
+                                        "State": "COLLAPSED"
+                                    }                                                                                                                                                                              
+                                ]                                        
+                            }
+                        }
+                    }                        
+                }
+            ],
+            "Layouts": [
+                {
+                    "Configuration": {
+                        "GridLayout": {
+                            "Elements": [
+                                {
+                                    "ElementId": "barchart1",
+                                    "ElementType": "VISUAL",
+                                    "ColumnIndex": 0,
+                                    "ColumnSpan": 26,
+                                    "RowIndex": 20,
+                                    "RowSpan": 10
+                                },
+                                {
+                                    "ElementId": "pivottable1",
+                                    "ElementType": "VISUAL",
+                                    "ColumnIndex": 0,
+                                    "ColumnSpan": 26,
+                                    "RowIndex": 35,
+                                    "RowSpan": 10
+                                }                                    
+                            ],
+                            "CanvasSizeOptions": {
+                                "ScreenCanvasSizeOptions": {
+                                    "ResizeOption": "FIXED",
+                                    "OptimizedViewPortWidth": "1600px"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "SheetId": "sheet2",
+            "Title": "EMR Application Spend",
+            "Description": "This dashboard shows the EMR spend breakdown by applications",
+            "Name": "EMR App Spend",
+            "FilterControls": [
+                {
+                    "DateTimePicker": {
+                        "FilterControlId": "daterangefilter2",
+                        "Title": "Date",
+                        "SourceFilterId": "timerangefilter2",
+                        "Type": "DATE_RANGE"
+                        }                      
+                },
+                {
+                    "Dropdown": {
+                        "FilterControlId": "clusterdropdownfilter2",
+                        "Title": "Cluster ID",
+                        "SourceFilterId": "clusterfilter2",
+                        "Type": "MULTI_SELECT"
+                        } 
+                }
+            ],
+            "Visuals": [
+                {
+                    "PivotTableVisual": {
+                        "VisualId": "pivottable2",
+                        "Title": {
+                            "Visibility": "VISIBLE",
+                            "FormatText": {
+                                "PlainText": "EMR Application Spend by Cluster, User & Application"
+                            }
+                        },
+                        "ChartConfiguration": {
+                            "FieldWells": {
+                                "PivotTableAggregatedFieldWells": {
+                                    "Rows": [
+                                        {
+                                            "CategoricalDimensionField": {
+                                                "FieldId": "cluster_id",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                                                    "ColumnName": "cluster_id"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "CategoricalDimensionField": {
+                                                "FieldId": "user",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                                                    "ColumnName": "user"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "CategoricalDimensionField": {
+                                                "FieldId": "finalstatus",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                                                    "ColumnName": "finalstatus"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "CategoricalDimensionField": {
+                                                "FieldId": "name",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                                                    "ColumnName": "name"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "CategoricalDimensionField": {
+                                                "FieldId": "id",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                                                    "ColumnName": "id"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "Columns": [
+                                        {
+                                            "DateDimensionField": {
+                                                "FieldId": "startedtime",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                                                    "ColumnName": "startedtime"
+                                                },
+                                                "DateGranularity": "HOUR"
+                                            }
+                                        }
+                                    ],
+                                    "Values": [
+                                        {
+                                            "NumericalMeasureField": {
+                                                "FieldId": "elapsed_sec",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                                                    "ColumnName": "elapsed_sec"
+                                                },
+                                                "AggregationFunction": {
+                                                    "SimpleNumericalAggregation": "SUM",
+                                                    "PercentileAggregation": {
+                                                        "PercentileValue": 0.0
+                                                    }
+                                                },
+                                                "FormatConfiguration": {
+                                                    "FormatConfiguration": {
+                                                        "NumberDisplayFormatConfiguration": {
+                                                            "SeparatorConfiguration": {
+                                                                "DecimalSeparator": "DOT",
+                                                                "ThousandsSeparator": {
+                                                                    "Symbol": "COMMA",
+                                                                    "Visibility": "VISIBLE"
+                                                                }
+                                                            },
+                                                            "DecimalPlacesConfiguration": {
+                                                                "DecimalPlaces": 2
+                                                            },
+                                                            "NumberScale": "THOUSANDS",
+                                                            "NegativeValueConfiguration": {
+                                                                "DisplayMode": "POSITIVE"
+                                                            }
+                                                        }                                                            
+                                                    }
+                                                }
+                                            }                                                    
+                                        },
+                                        {
+                                            "NumericalMeasureField": {
+                                                "FieldId": "application_cost",
+                                                "Column": {
+                                                    "DataSetIdentifier": {"Fn::Sub": "${EMRAppTableName}_view"},
+                                                    "ColumnName": "application_cost"
+                                                },
+                                                "AggregationFunction": {
+                                                    "SimpleNumericalAggregation": "SUM",
+                                                    "PercentileAggregation": {
+                                                        "PercentileValue": 0.0
+                                                    }
+                                                },
+                                                "FormatConfiguration": {
+                                                    "FormatConfiguration": {
+                                                        "CurrencyDisplayFormatConfiguration": {
+                                                            "SeparatorConfiguration": {
+                                                                "DecimalSeparator": "DOT",
+                                                                "ThousandsSeparator": {
+                                                                    "Symbol": "COMMA",
+                                                                    "Visibility": "VISIBLE"
+                                                                }
+                                                            },
+                                                            "Symbol": "USD",
+                                                            "DecimalPlacesConfiguration": {
+                                                                "DecimalPlaces": 4
+                                                            },
+                                                            "NumberScale": "NONE",
+                                                            "NegativeValueConfiguration": {
+                                                                "DisplayMode": "POSITIVE"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }                                                    
+                                        }                                                
+                                    ]
+                                }
+                            },
+                            "TableOptions" : {
+                                "RowsLayout": "HIERARCHY"
+                            },                                    
+                            "TotalOptions": {
+                                "RowSubtotalOptions": {
+                                    "TotalsVisibility": "VISIBLE",
+                                    "CustomLabel": "Subtotal",
+                                    "FieldLevel": "ALL"
+                                },                                    
+                                "RowTotalOptions": {
+                                    "TotalsVisibility": "HIDDEN",
+                                    "Placement": "AUTO"
+                                },
+                                "ColumnTotalOptions": {
+                                    "TotalsVisibility": "VISIBLE",
+                                    "Placement": "END"
+                                }
+                            },                                
+                            "FieldOptions": {
+                                "SelectedFieldOptions": [
+                                    {
+                                        "FieldId": "cluster_id",
+                                        "CustomLabel": "Cluster ID",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "user",
+                                        "CustomLabel": "Username",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "finalstatus",
+                                        "CustomLabel": "Status",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "name",
+                                        "CustomLabel": "App Name",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "id",
+                                        "CustomLabel": "Job ID",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "startedtime",
+                                        "CustomLabel": "Start Date/Time",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "elapsed_sec",
+                                        "CustomLabel": "RunTime(sec)",
+                                        "Visibility": "VISIBLE"
+                                    },
+                                    {
+                                        "FieldId": "application_cost",
+                                        "CustomLabel": "RunCost",
+                                        "Visibility": "VISIBLE"
+                                    }
+                                ],
+                                "CollapseStateOptions": [
+                                    {
+                                        "Target": {
+                                            "FieldId": "cluster_id"
+                                        },
+                                        "State": "COLLAPSED"
+                                    },
+                                    {
+                                        "Target": {
+                                            "FieldId": "user"
+                                        },
+                                        "State": "COLLAPSED"
+                                    },
+                                    {
+                                        "Target": {
+                                            "FieldId": "finalstatus"
+                                        },
+                                        "State": "COLLAPSED"
+                                    },
+                                    {
+                                        "Target": {
+                                            "FieldId": "name"
+                                        },
+                                        "State": "COLLAPSED"
+                                    },
+                                    {
+                                        "Target": {
+                                            "FieldId": "id"
+                                        },
+                                        "State": "COLLAPSED"
+                                    }                                                                                                                                                                                
+                                ]
+                            }                                    
+                        }
+                    }                        
+                }
+            ],
+            "Layouts": [
+                {
+                    "Configuration": {
+                        "GridLayout": {
+                            "Elements": [
+                                {
+                                    "ElementId": "pivottable2",
+                                    "ElementType": "VISUAL",
+                                    "ColumnIndex": 0,
+                                    "ColumnSpan": 26,
+                                    "RowIndex": 20,
+                                    "RowSpan": 10
+                                }                                    
+                            ],
+                            "CanvasSizeOptions": {
+                                "ScreenCanvasSizeOptions": {
+                                    "ResizeOption": "FIXED",
+                                    "OptimizedViewPortWidth": "1600px"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]                              
+        }                
+    ]
+}
